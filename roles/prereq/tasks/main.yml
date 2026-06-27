@@ -1,4 +1,17 @@
 ---
+- name: Check if swap is enabled
+  ansible.builtin.command: swapon --show
+  register: swap_status
+  changed_when: false
+
+- name: Disable swap
+  when: 
+    - ansible_distribution in ['Ubuntu']
+    - swap_status.stdout != ""
+  shell: |
+    swapoff -a
+    sed -i '/ swap / s/^/#/' /etc/fstab
+
 - name: Enforce minimum Ansible version
   ansible.builtin.assert:
     that:
@@ -10,6 +23,30 @@
   ansible.builtin.apt:
     name: policycoreutils  # Used by install script to restore SELinux context
     update_cache: true
+
+- name: Increase rmem_max
+  ansible.posix.sysctl:
+    name: net.core.rmem_max
+    value: "1048576"
+    state: present
+    reload: true
+
+- name: Install avahi-daemon
+  apt:
+    name: avahi-daemon
+    state: present
+- name: Set enable-reflector to yes
+  lineinfile:
+    path: /etc/avahi/avahi-daemon.conf
+    regexp: '^#?enable-reflector='
+    line: 'enable-reflector=yes'
+  notify: Restart avahi-daemon
+- name: Set reflect-ipv to no
+  lineinfile:
+    path: /etc/avahi/avahi-daemon.conf
+    regexp: '^#?reflect-ipv='
+    line: 'reflect-ipv=no'
+  notify: Restart avahi-daemon
 
 - name: Enable IPv4 forwarding
   ansible.posix.sysctl:
