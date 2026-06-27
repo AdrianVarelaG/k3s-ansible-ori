@@ -1,16 +1,17 @@
 ---
 - name: Check if swap is enabled
   ansible.builtin.command: swapon --show
-  register: swap_status
+  register: prereq_swap_status
   changed_when: false
 
 - name: Disable swap
-  when: 
+  when:
     - ansible_distribution in ['Ubuntu']
-    - swap_status.stdout != ""
-  shell: |
+    - prereq_swap_status.stdout != ""
+  ansible.builtin.shell: |
     swapoff -a
     sed -i '/ swap / s/^/#/' /etc/fstab
+  changed_when: true
 
 - name: Enforce minimum Ansible version
   ansible.builtin.assert:
@@ -49,17 +50,19 @@
     reload: true
 
 - name: Install avahi-daemon
-  apt:
+  ansible.builtin.apt:
     name: avahi-daemon
     state: present
+
 - name: Set enable-reflector to yes
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/avahi/avahi-daemon.conf
     regexp: '^#?enable-reflector='
     line: 'enable-reflector=yes'
   notify: Restart avahi-daemon
+
 - name: Set reflect-ipv to no
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/avahi/avahi-daemon.conf
     regexp: '^#?reflect-ipv='
     line: 'reflect-ipv=no'
