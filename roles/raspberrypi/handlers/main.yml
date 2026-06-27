@@ -2,7 +2,9 @@
 - name: Reboot Pi
   ansible.builtin.reboot:
     post_reboot_delay: 10
-    reboot_timeout: 60
+    # Raspberry Pi boot is slow; 60s (upstream default) times out before the
+    # node returns and aborts the play before k3s is reconciled.
+    reboot_timeout: 300
 
 - name: Regenerate bootloader image
   ansible.builtin.command: ./mkscr
