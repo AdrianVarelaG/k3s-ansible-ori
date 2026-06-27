@@ -6,3 +6,5 @@ inventory.yml
 playbook/debug.yml
 .ansible/
 PR_DESCRIPTION.md
+# Local apply/backup artifacts (may contain cluster token)
+backup-k3s/
